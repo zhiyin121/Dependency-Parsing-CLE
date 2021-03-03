@@ -1,5 +1,6 @@
 from tools import reader, writer
 from itertools import combinations
+import time
 
 def get_edge(vertexs):  
     edges = set()
@@ -58,8 +59,12 @@ def get_template(feature):  #format: ({'dform':dform, 'dpos':dpos}, {'hform':hfo
         
 
 def get_dict(dic_f, dic_e, sents):    #dic_f = {} -> {feature string: index, ...}
-                                      #dic_e = {} -> {edge tuple: vector representation, ...}
+                                     #dic_e = {} -> {edge tuple: vector representation, ...}
     for index_s in range(len(sents)):
+        if index_s%10 == 0:
+            print(index_s)
+            end = time.time()
+            print(end-start)
         sentence = sents[index_s].tokens
         gold_feature, nega_feature = get_feature(sentence)
             
@@ -103,17 +108,16 @@ def get_dict(dic_f, dic_e, sents):    #dic_f = {} -> {feature string: index, ...
                     
             dic_e[edge] = []
             
-            #print(dic_e)
-            
-        return dic_f, dic_e
+            #print(dic_e)    
+    return dic_f, dic_e
         
-
-sents = reader("devconll06pred.txt")
+start = time.time()
+sents = reader("wsj_train.first-5k.conll06")
+print(len(sents))
 dic_f = {} #{feature string: index, ...}
 dic_e = {} #{edge tuple: vector representation, ...}
 dic_features, dic_edges = get_dict(dic_f, dic_e, sents)
-print(dic_edges)
-
+print(len(dic_features), len(dic_edges))
 
 class FeatureMapping(object):
     def __init__(self, feature):
