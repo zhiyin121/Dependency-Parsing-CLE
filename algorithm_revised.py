@@ -1,12 +1,12 @@
 import numpy as np
 
 def get_edge(vertexs):
-        edges = set()
-        for i in vertexs:
-            for j in vertexs:
-                if i != j and j != 0:
-                    edges.add((i, j))
-        return edges
+    edges = set()
+    for i in vertexs:
+        for j in vertexs:
+            if i != j and j != 0:
+                edges.add((i, j))
+    return edges
 
 
 class Graph(object):

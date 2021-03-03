@@ -33,7 +33,8 @@ def reader(filename):
             #print(sent)
             sents.append(Sentence(sent))
             sent = [Token([0, 'ROOT', '_', 'ROOT', '_', '_', None, '_', '_', '_'])]
-            
+
+    file.close()
     return sents  #[<['ROOT','yeah', '!']>, <[<''>,...]>]
 
 
@@ -46,6 +47,7 @@ def writer(filename, sentences):
             content += '\t'.join(line) + '\n'
         content += '\n'
     w.write(content)
+    w.close()
             
           
 '''
