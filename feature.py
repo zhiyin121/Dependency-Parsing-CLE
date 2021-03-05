@@ -1,4 +1,4 @@
-from tools import reader, writer
+from tools import reader
 from itertools import combinations
 import time
 
