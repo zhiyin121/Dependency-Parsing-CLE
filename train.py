@@ -1,5 +1,5 @@
 from tools import reader, writer
-from algorithm_revised import Graph, sigma, chuliuedmonds
+from algorithm_revised_2 import Graph, sigma, chuliuedmonds
 from feature_revised import FeatureMapping
 import numpy as np
 

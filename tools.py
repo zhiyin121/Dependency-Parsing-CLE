@@ -21,16 +21,17 @@ class Sentence(object):
 def reader(filename):
     file = open(filename, 'r', encoding='utf-8')
     token_list = list(file)
+    token_list.append('\n')
     line_count = len(token_list)
     
     sents = []; sent = [Token([0, 'ROOT', '_', 'ROOT', '_', '_', None, '_', '_', '_'])]    
     for i in range(line_count):
         token = token_list[i].strip('\n').split('\t')
         
-        if token[0] != '':
+        if token != ['']:
+            
             sent.append(Token(token))
         else:
-            #print(sent)
             sents.append(Sentence(sent))
             sent = [Token([0, 'ROOT', '_', 'ROOT', '_', '_', None, '_', '_', '_'])]
 
@@ -50,14 +51,14 @@ def writer(filename, sentences):
     w.close()
             
           
-'''
+
 #-------testing------
+if __name__ == '__main__':
+    sents = reader("test_devconll06.txt")
+    print(sents[3].tokens)
 
-sents = reader("devconll06pred.txt")
-#print(sents[0].tokens[1].form)
+#w = writer('test_write.txt', sents)
 
-w = writer('test_write.txt', sents)
-'''
 
 class Evaluate(object):
     def __init__(self, pred_filename, gold_filename):
@@ -108,14 +109,12 @@ class Evaluate(object):
         return la_score
 
 
-'''
+
 #-------testing------            
-a= Evaluate('wsj_dev.conll06.pred', 'wsj_dev.conll06.gold')
-a.uas()
-a.las()
-'''
-
-
+if __name__ == '__main__':
+    a= Evaluate('wsj_dev.conll06.pred', 'wsj_dev.conll06.gold')
+    a.uas()
+    a.las()
 
 
 

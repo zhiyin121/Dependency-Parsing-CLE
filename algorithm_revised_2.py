@@ -1,6 +1,7 @@
 import numpy as np
 from tools import reader
 from feature_revised import FeatureMapping
+import time
 
 def get_edge(vertexs):
     edges = set()
@@ -9,7 +10,6 @@ def get_edge(vertexs):
             if i != j and j.form != 'ROOT':
                 edges.add((i, j))
     return edges
-
 
 
 class Graph(object):
@@ -24,7 +24,7 @@ def sigma(vertexs, fm):
 
 
 def chuliuedmonds(w, g, sigma, fm):
-    
+    counts = 1
     represetation = sigma(g.vertexs, fm)  # a dict {(head, dependent):[1, 23,... 45],...}
 
     a = set()
@@ -32,12 +32,13 @@ def chuliuedmonds(w, g, sigma, fm):
 
     for v_d in g.vertexs:
         for edge in g.edges:
-            if v_d.form == 'ROOT':
+            if v_d.form == 'ROOT' and edge[0].form == 'ROOT':
                 r_score = dot(w, represetation[edge])
+                # print(r_score, edge[1])
                 dic_root[edge[1]] = r_score
                 root_h = v_d
             else:
-                if edge[1] == v_d and edge[0] != 'ROOT':
+                if edge[1] == v_d and edge[0].form != 'ROOT':
                     dic[edge[0]] = dot(w, represetation[edge])
                     # print(dic[edge[0]])
                     
@@ -60,35 +61,44 @@ def chuliuedmonds(w, g, sigma, fm):
         c = set(findonecycle(g_a.edges))
         print('\ncycle:',c, '\n')
         g_c = contract(g, c, sigma, w, fm)
-        y = chuliuedmonds(w, g_c, sigma, fm)
-        
-        # print(resolvecycle(y, c))
-        return resolvecycle(y, c)
+        counts += 1
+        if counts > 10:
+            return resolvecycle(g_a, c)
+        else:
+            y = chuliuedmonds(w, g_c, sigma, fm)
+                
+            # print(resolvecycle(y, c))
+            return resolvecycle(y, c)
         
 
 def findonecycle(g_a):
-        
+    
     def get_next(g_a, dependent):
         next_pair = []
         for i in g_a:
             if dependent == i[0]:
                 next_pair = i
-        if next_pair != []:
-            if next_pair[1] != lst[0][0]:
-                lst.append(next_pair)
-                get_next(g_a, next_pair[1])
-            else:
-                lst.append(next_pair)
+        if next_pair in lst:
+            pass
+        else:
+            if next_pair != []:
+                if next_pair[1] != lst[0][0]:
+                    lst.append(next_pair)
+                    get_next(g_a, next_pair[1])
+                else:
+                    lst.append(next_pair)
         return lst
-
+    # print(g_a)
     for i in g_a:
         lst = [i]
         get_next(g_a, i[1])
         if lst[0][0] == lst[-1][1]:
             return lst
+    
 
 
 def dot(w, feature):
+    # print(feature)
     f = np.zeros(w.shape)
     f[feature] += 1
     return np.dot(w, f)
@@ -98,13 +108,14 @@ def contract(g, c, sigma, w, fm):
     v_c = set()
     dic_c = {}
     root_has_child = 0  # in case ROOT already link to a v_d (dependent)
-
+    
     represetation = sigma(g.vertexs, fm)  # a dict {(head, dependent):[1, 23,... 45],...}
+    
     for i in c:
         v_c.add(i[0])
         v_c.add(i[1])
         dic_c[i[1]] = i[0] #key:dependent, value:head
-     
+
     all_v_d = set(g.vertexs) - v_c
     g_c = set()
 
@@ -115,6 +126,7 @@ def contract(g, c, sigma, w, fm):
         if i[0] in v_c or i[1] in v_c:
             pass
         else:
+            # print(i)
             if i[0].form == 'ROOT':
                 root_h = i[0]
                 root_has_child += 1
@@ -128,27 +140,30 @@ def contract(g, c, sigma, w, fm):
                     new = dot(w, represetation[(i[0], i[1])])
                     if new > original:
                         dic_other[i[1]] = i[0]
-                        
-    root_d = max(dic_root, key=dic_root.get)
-    g_c.add((root_h, root_d))
+    # print('dic_root', dic_root)
+    if not dic_root == {}:
+        root_d = max(dic_root, key=dic_root.get)
+        g_c.add((root_h, root_d))
 
 
     for e in dic_other:
-        if e == root_d:
-            pass
-        else:
+        if dic_root == {}:
             g_c.add((dic_other[e], e))
+        else:
+            if e == root_d:
+                pass
+            else:
+                g_c.add((dic_other[e], e))
+        
             
-    print(root_has_child)
-    print('g_c_vd', g_c)
+    #print(root_has_child)
+    #print('g_c_vd', g_c)
 
     
     # cycle -> v_d
     for d in all_v_d:
         dic_h = {}
-        if d.form == 'ROOT':
-            pass
-        else:
+        if d.form != 'ROOT':
             have_head = []
             for j in g_c:
                 if d == j[1]:
@@ -166,23 +181,22 @@ def contract(g, c, sigma, w, fm):
                         root_has_child += 1
                     h_score = dot(w, represetation[(h, d)])
                     dic_h[h] = h_score
-                    
-            v_h = max(dic_h, key=dic_h.get)
-            if have_head == None:
-                g_c.add((v_h, d))
-            else:
-                original = dot(w, represetation[have_head[0]])
-                new = dic_h[v_h]
-                print(original, new)
-                if new <= original:
-                    pass
-                else:
-                    g_c.remove(have_head[0])
+            if not dic_root == {}:
+                v_h = max(dic_h, key=dic_h.get)
+                if have_head == []:
                     g_c.add((v_h, d))
+                else:
+                    original = dot(w, represetation[have_head[0]])
+                    new = dic_h[v_h]
+                    if new <= original:
+                        pass
+                    else:
+                        g_c.remove(have_head[0])
+                        g_c.add((v_h, d))
                       
 
-    print(root_has_child)
-    print('g_c_out', g_c)                    
+    #print(root_has_child)
+    #print('g_c_out', g_c)                    
                     
     # cycle <- v_h
     for d in v_c:
@@ -199,13 +213,13 @@ def contract(g, c, sigma, w, fm):
                     root_has_child += 1                    
                 h_score = dot(w, represetation[(h, d)]) - dot(w, represetation[(dic_c[d], d)])
                 dic_h[h] = h_score
-        
-        v_h = max(dic_h, key=dic_h.get)
-        #print((v_h, v_d))
-        g_c.add((v_h, d))
+        if not dic_h == {}:
+            v_h = max(dic_h, key=dic_h.get)
+            #print((v_h, v_d))
+            g_c.add((v_h, d))
        
-    print(root_has_child)
-    print('g_c_in', g_c)
+    #print(root_has_child)
+    #print('g_c_in', g_c)
     
     return Graph(g.vertexs, g_c)
 
@@ -236,14 +250,19 @@ def resolvecycle(y, c):
 
 #--------------test-----------------
 if __name__ == '__main__':
-    sents = reader("wsj_train.first-5k.conll06")
+    sents = reader("wsj_dev.conll06.pred")
+    fm = FeatureMapping()
+    w = np.random.random(3000000)
     for index_s in range(len(sents)):
+        print(index_s)
         sent = sents[index_s].tokens
         vertexs = sent
         edges = get_edge(vertexs)
         #print()
         g = Graph(vertexs, edges)
-        w = np.zeros(3000000)
-        fm = FeatureMapping()
+        print('Start -', index_s)
+        start = time.time()
         chuliuedmonds(w, g, sigma,fm)
+        end = time.time()
+        print('TIME:', end-start)
 
