@@ -1,6 +1,8 @@
 class Token(object):
     def __init__(self, token):
+        self.id = token[0]
         self.form = token[1]
+        self.lemma = token[2]                     
         self.pos = token[3]
         self.head = token[6]
         self.label = token[7]
@@ -115,32 +117,4 @@ if __name__ == '__main__':
     a= Evaluate('wsj_dev.conll06.pred', 'wsj_dev.conll06.gold')
     a.uas()
     a.las()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
